@@ -32,3 +32,11 @@ class AdminPhotoController extends Controller
 
 
 
+
+
+
+
+
+
+
+

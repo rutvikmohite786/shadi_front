@@ -41,3 +41,11 @@ class Banner extends Model
 
 
 
+
+
+
+
+
+
+
+

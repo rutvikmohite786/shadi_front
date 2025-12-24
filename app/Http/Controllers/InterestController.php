@@ -35,7 +35,7 @@ class InterestController extends Controller
         $request->validate(['message' => ['nullable', 'string', 'max:500']]);
         $result = $this->interestService->sendInterest(auth()->user(), $userId, $request->get('message'));
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->ajax()) {
             return response()->json($result, $result['success'] ? 200 : 400);
         }
 
@@ -83,6 +83,9 @@ class InterestController extends Controller
             : back()->withErrors(['interest' => $result['message']]);
     }
 }
+
+
+
 
 
 

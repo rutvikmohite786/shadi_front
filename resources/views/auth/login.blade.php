@@ -42,14 +42,14 @@
                 @csrf
 
                 <div class="form-group">
-                    <label for="email" class="form-label">Email Address</label>
+                    <label for="email" class="form-label">Email or Phone Number</label>
                     <input 
-                        type="email" 
+                        type="text" 
                         id="email" 
                         name="email" 
                         class="form-control @error('email') is-invalid @enderror" 
                         value="{{ old('email') }}" 
-                        placeholder="Enter your email"
+                        placeholder="Enter your email or phone number"
                         required 
                         autofocus
                     >

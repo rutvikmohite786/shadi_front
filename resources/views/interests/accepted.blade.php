@@ -61,7 +61,7 @@
                 @endforeach
             </div>
             
-            @if($interests->hasPages())
+            @if(method_exists($interests, 'hasPages') && $interests->hasPages())
                 <div class="mt-6">
                     {{ $interests->links() }}
                 </div>

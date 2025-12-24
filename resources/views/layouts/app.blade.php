@@ -2,8 +2,11 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <title>{{ config('app.name', 'Shadi') }} - @yield('title', 'Find Your Perfect Match')</title>
     <meta name="description" content="@yield('description', 'Find your perfect life partner with our trusted matrimonial service. Register free and connect with verified profiles.')">
@@ -64,6 +67,9 @@
 
         <!-- Footer -->
         @include('layouts.partials.footer')
+
+        <!-- Mobile Bottom Navigation -->
+        @include('layouts.partials.mobile-bottom-nav')
     </div>
 
     <!-- Scripts -->

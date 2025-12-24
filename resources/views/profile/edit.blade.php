@@ -2,6 +2,100 @@
 
 @section('title', 'Edit Profile')
 
+@push('styles')
+<style>
+    /* Profile edit page - Ensure correct layout: Navbar at top, Footer at bottom */
+    
+    /* Navbar positioning - must stay at top */
+    #app > nav.navbar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1000 !important;
+        width: 100% !important;
+    }
+    
+    /* Main content - normal flow after navbar */
+    #app > main {
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Footer - normal flow after main, at bottom */
+    #app > footer.footer {
+        position: relative;
+        z-index: 1;
+        margin-top: 0;
+    }
+    
+    /* Profile edit content */
+    .py-8 {
+        position: relative;
+    }
+    
+    @media (max-width: 768px) {
+        /* Mobile: navbar fixed at top */
+        #app > nav.navbar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+        }
+        
+        /* Add space for fixed navbar */
+        #app > main {
+            margin-top: 60px !important;
+            padding-bottom: 80px !important;
+        }
+        
+        .py-8 {
+            padding-top: 1rem !important;
+            padding-bottom: 100px !important;
+        }
+        
+        /* Hide footer on mobile */
+        #app > footer.footer {
+            display: none !important;
+        }
+    }
+    
+    @media (min-width: 769px) {
+        /* Desktop: navbar sticky at top */
+        #app > nav.navbar {
+            position: sticky !important;
+            top: 0 !important;
+        }
+        
+        #app > main {
+            margin-top: 0 !important;
+        }
+        
+        .py-8 {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+        }
+        
+        /* Ensure footer shows on desktop */
+        #app > footer.footer {
+            display: block !important;
+        }
+    }
+    
+    /* Ensure profile photo preview displays correctly */
+    #profile-photo-preview {
+        display: block;
+        background: var(--gray-100);
+        min-height: 150px;
+    }
+    
+    #profile-photo-preview[src=""],
+    #profile-photo-preview:not([src]) {
+        background-image: url('{{ asset("images/static/default-" . (auth()->user()->gender === "female" ? "female" : "male") . ".jpg") }}');
+        background-size: cover;
+        background-position: center;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="py-8">
     <div class="container">
@@ -19,7 +113,7 @@
                     <h4 class="mb-1">{{ $user->name }}</h4>
                     <p class="text-muted mb-2">Profile ID: {{ $user->id }}</p>
                     @php
-                        $completionPercentage = $user->profile_completed ? 100 : 40;
+                        $completionPercentage = $user->getProfileCompletionPercentage();
                     @endphp
                     <div class="flex items-center gap-3">
                         <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
@@ -236,14 +330,14 @@
                         
                         <div class="form-group">
                             <label for="caste_id" class="form-label">Caste</label>
-                            <select id="caste_id" name="caste_id" class="form-select">
+                            <select id="caste_id" name="caste_id" class="form-select" data-selected="{{ old('caste_id', $profile?->caste_id) }}">
                                 <option value="">Select Caste</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
                             <label for="subcaste_id" class="form-label">Sub-Caste</label>
-                            <select id="subcaste_id" name="subcaste_id" class="form-select">
+                            <select id="subcaste_id" name="subcaste_id" class="form-select" data-selected="{{ old('subcaste_id', $profile?->subcaste_id) }}">
                                 <option value="">Select Sub-Caste</option>
                             </select>
                         </div>
@@ -316,14 +410,14 @@
                         
                         <div class="form-group">
                             <label for="state_id" class="form-label">State</label>
-                            <select id="state_id" name="state_id" class="form-select">
+                            <select id="state_id" name="state_id" class="form-select" data-selected="{{ old('state_id', $profile?->state_id) }}">
                                 <option value="">Select State</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
                             <label for="city_id" class="form-label">City</label>
-                            <select id="city_id" name="city_id" class="form-select">
+                            <select id="city_id" name="city_id" class="form-select" data-selected="{{ old('city_id', $profile?->city_id) }}">
                                 <option value="">Select City</option>
                             </select>
                         </div>
@@ -628,12 +722,13 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         @foreach($photos as $photo)
                             <div class="card" style="position: relative;">
-                                <img src="{{ asset('images/profile/' . $photo->file_name) }}" alt="Photo" 
-                                     style="width: 100%; height: 200px; object-fit: cover;">
+                                <img src="{{ $photo->getPhotoUrl() }}" alt="Photo" 
+                                     style="width: 100%; height: 200px; object-fit: cover;"
+                                     onerror="this.src='{{ asset('images/static/default-' . (auth()->user()->gender === 'female' ? 'female' : 'male') . '.jpg') }}'; this.onerror=null;">
                                 @if($photo->is_primary)
                                     <span class="badge badge-primary" style="position: absolute; top: 10px; left: 10px;">Primary</span>
                                 @endif
-                                @if($photo->status === 'pending')
+                                @if(!$photo->is_approved)
                                     <span class="badge badge-secondary" style="position: absolute; top: 10px; right: 10px;">Pending</span>
                                 @endif
                                 <div class="p-2 flex gap-2">
@@ -700,77 +795,151 @@
     });
     
     // Dependent dropdowns for Religion -> Caste -> Subcaste
-    document.getElementById('religion_id')?.addEventListener('change', function() {
-        var religionId = this.value;
+    function loadCastes(religionId, selectedCasteId = null) {
         var casteSelect = document.getElementById('caste_id');
+        if (!casteSelect) return Promise.resolve();
         
         if (religionId) {
-            fetch('/ajax/castes/' + religionId)
+            return fetch('/ajax/castes/' + religionId)
                 .then(response => response.json())
                 .then(data => {
                     casteSelect.innerHTML = '<option value="">Select Caste</option>';
                     data.forEach(function(caste) {
-                        casteSelect.innerHTML += '<option value="' + caste.id + '">' + caste.name + '</option>';
+                        var selected = selectedCasteId && caste.id == selectedCasteId ? ' selected' : '';
+                        casteSelect.innerHTML += '<option value="' + caste.id + '"' + selected + '>' + caste.name + '</option>';
                     });
                 });
         } else {
             casteSelect.innerHTML = '<option value="">Select Caste</option>';
+            return Promise.resolve();
+        }
+    }
+    
+    function loadSubcastes(casteId, selectedSubcasteId = null) {
+        var subcasteSelect = document.getElementById('subcaste_id');
+        if (!subcasteSelect) return Promise.resolve();
+        
+        if (casteId) {
+            return fetch('/ajax/subcastes/' + casteId)
+                .then(response => response.json())
+                .then(data => {
+                    subcasteSelect.innerHTML = '<option value="">Select Sub-Caste</option>';
+                    data.forEach(function(subcaste) {
+                        var selected = selectedSubcasteId && subcaste.id == selectedSubcasteId ? ' selected' : '';
+                        subcasteSelect.innerHTML += '<option value="' + subcaste.id + '"' + selected + '>' + subcaste.name + '</option>';
+                    });
+                });
+        } else {
+            subcasteSelect.innerHTML = '<option value="">Select Sub-Caste</option>';
+            return Promise.resolve();
+        }
+    }
+    
+    // Load castes/subcastes on page load if religion/caste is already selected
+    (function() {
+        var religionSelect = document.getElementById('religion_id');
+        var casteSelect = document.getElementById('caste_id');
+        var subcasteSelect = document.getElementById('subcaste_id');
+        
+        if (religionSelect && religionSelect.value) {
+            var savedCasteId = casteSelect ? casteSelect.getAttribute('data-selected') : null;
+            var savedSubcasteId = subcasteSelect ? subcasteSelect.getAttribute('data-selected') : null;
+            
+            loadCastes(religionSelect.value, savedCasteId).then(function() {
+                if (savedCasteId) {
+                    loadSubcastes(savedCasteId, savedSubcasteId);
+                }
+            });
+        }
+    })();
+    
+    document.getElementById('religion_id')?.addEventListener('change', function() {
+        var religionId = this.value;
+        loadCastes(religionId);
+        // Clear subcaste when religion changes
+        var subcasteSelect = document.getElementById('subcaste_id');
+        if (subcasteSelect) {
+            subcasteSelect.innerHTML = '<option value="">Select Sub-Caste</option>';
         }
     });
     
     document.getElementById('caste_id')?.addEventListener('change', function() {
         var casteId = this.value;
-        var subcasteSelect = document.getElementById('subcaste_id');
-        
-        if (casteId) {
-            fetch('/ajax/subcastes/' + casteId)
-                .then(response => response.json())
-                .then(data => {
-                    subcasteSelect.innerHTML = '<option value="">Select Sub-Caste</option>';
-                    data.forEach(function(subcaste) {
-                        subcasteSelect.innerHTML += '<option value="' + subcaste.id + '">' + subcaste.name + '</option>';
-                    });
-                });
-        } else {
-            subcasteSelect.innerHTML = '<option value="">Select Sub-Caste</option>';
-        }
+        loadSubcastes(casteId);
     });
     
     // Dependent dropdowns for Country -> State -> City
-    document.getElementById('country_id')?.addEventListener('change', function() {
-        var countryId = this.value;
+    function loadStates(countryId, selectedStateId = null) {
         var stateSelect = document.getElementById('state_id');
+        if (!stateSelect) return Promise.resolve();
         
         if (countryId) {
-            fetch('/ajax/states/' + countryId)
+            return fetch('/ajax/states/' + countryId)
                 .then(response => response.json())
                 .then(data => {
                     stateSelect.innerHTML = '<option value="">Select State</option>';
                     data.forEach(function(state) {
-                        stateSelect.innerHTML += '<option value="' + state.id + '">' + state.name + '</option>';
+                        var selected = selectedStateId && state.id == selectedStateId ? ' selected' : '';
+                        stateSelect.innerHTML += '<option value="' + state.id + '"' + selected + '>' + state.name + '</option>';
                     });
                 });
         } else {
             stateSelect.innerHTML = '<option value="">Select State</option>';
+            return Promise.resolve();
+        }
+    }
+    
+    function loadCities(stateId, selectedCityId = null) {
+        var citySelect = document.getElementById('city_id');
+        if (!citySelect) return Promise.resolve();
+        
+        if (stateId) {
+            return fetch('/ajax/cities/' + stateId)
+                .then(response => response.json())
+                .then(data => {
+                    citySelect.innerHTML = '<option value="">Select City</option>';
+                    data.forEach(function(city) {
+                        var selected = selectedCityId && city.id == selectedCityId ? ' selected' : '';
+                        citySelect.innerHTML += '<option value="' + city.id + '"' + selected + '>' + city.name + '</option>';
+                    });
+                });
+        } else {
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            return Promise.resolve();
+        }
+    }
+    
+    // Load states/cities on page load if country/state is already selected
+    (function() {
+        var countrySelect = document.getElementById('country_id');
+        var stateSelect = document.getElementById('state_id');
+        var citySelect = document.getElementById('city_id');
+        
+        if (countrySelect && countrySelect.value) {
+            var savedStateId = stateSelect ? stateSelect.getAttribute('data-selected') : null;
+            var savedCityId = citySelect ? citySelect.getAttribute('data-selected') : null;
+            
+            loadStates(countrySelect.value, savedStateId).then(function() {
+                if (savedStateId) {
+                    loadCities(savedStateId, savedCityId);
+                }
+            });
+        }
+    })();
+    
+    document.getElementById('country_id')?.addEventListener('change', function() {
+        var countryId = this.value;
+        loadStates(countryId);
+        // Clear city when country changes
+        var citySelect = document.getElementById('city_id');
+        if (citySelect) {
+            citySelect.innerHTML = '<option value="">Select City</option>';
         }
     });
     
     document.getElementById('state_id')?.addEventListener('change', function() {
         var stateId = this.value;
-        var citySelect = document.getElementById('city_id');
-        
-        if (stateId) {
-            fetch('/ajax/cities/' + stateId)
-                .then(response => response.json())
-                .then(data => {
-                    citySelect.innerHTML = '<option value="">Select City</option>';
-                    data.forEach(function(city) {
-                        citySelect.innerHTML += '<option value="' + city.id + '">' + city.name + '</option>';
-                    });
-                });
-        } else {
-            citySelect.innerHTML = '<option value="">Select City</option>';
-        }
+        loadCities(stateId);
     });
 </script>
 @endpush

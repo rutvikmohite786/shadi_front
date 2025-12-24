@@ -51,11 +51,19 @@ class ChatController extends Controller
         return response()->json(['success' => true, 'messages' => $messages]);
     }
 
-    public function sendMessage(Request $request, int $userId): JsonResponse
+    public function sendMessage(Request $request, int $userId): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         $request->validate(['message' => ['required', 'string', 'max:1000']]);
         $result = $this->chatService->sendMessage(auth()->user(), $userId, $request->message);
-        return response()->json($result, $result['success'] ? 200 : 403);
+        
+        // Return JSON for AJAX requests, redirect for regular form submissions
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json($result, $result['success'] ? 200 : 403);
+        }
+        
+        return $result['success']
+            ? back()->with('success', 'Message sent.')
+            : back()->withErrors(['message' => $result['message']]);
     }
 
     public function markAsRead(int $userId): JsonResponse
@@ -89,6 +97,7 @@ class ChatController extends Controller
         return response()->json(['token' => $this->chatService->getChatToken(auth()->user())]);
     }
 }
+
 
 
 

@@ -29,11 +29,13 @@
         @if(isset($matches) && count($matches) > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($matches as $match)
-                    @include('components.profile-card', ['profile' => $match])
+                    @if($match->matchedUser)
+                        @include('components.profile-card', ['user' => $match->matchedUser, 'matchScore' => $match->match_score])
+                    @endif
                 @endforeach
             </div>
             
-            @if($matches->hasPages())
+            @if(method_exists($matches, 'hasPages') && $matches->hasPages())
                 <div class="mt-8">
                     {{ $matches->links() }}
                 </div>

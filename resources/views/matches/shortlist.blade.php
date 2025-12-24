@@ -29,7 +29,9 @@
         @if(isset($shortlisted) && count($shortlisted) > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($shortlisted as $item)
-                    @include('components.profile-card', ['profile' => $item->user ?? $item, 'isShortlisted' => true])
+                    @if($item->shortlistedUser)
+                        @include('components.profile-card', ['user' => $item->shortlistedUser, 'isShortlisted' => true])
+                    @endif
                 @endforeach
             </div>
         @else

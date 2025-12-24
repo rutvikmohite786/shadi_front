@@ -31,12 +31,18 @@ class MatchService
 
         foreach ($potentialMatches as $match) {
             $score = $this->calculateMatchScore($user, $match);
-            $this->matchRepository->create([
-                'user_id' => $user->id,
-                'matched_user_id' => $match->id,
-                'match_score' => $score,
-                'matched_date' => today(),
-            ]);
+            
+            // Use updateOrCreate to handle existing matches gracefully
+            $this->matchRepository->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'matched_user_id' => $match->id,
+                ],
+                [
+                    'match_score' => $score,
+                    'matched_date' => today(),
+                ]
+            );
         }
 
         return $this->matchRepository->getDailyMatches($user->id);
@@ -148,6 +154,10 @@ class MatchService
         return $this->ignoreRepository->isIgnored($userId, $ignoredUserId);
     }
 }
+
+
+
+
 
 
 

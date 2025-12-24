@@ -1254,3 +1254,387 @@ h6 { font-size: 1.125rem; }
     .md\:flex { display: flex; }
 }
 
+/* --------------------------------------------------------------------------
+   Mobile App View Styles (Only for mobile devices)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* App-like body styling */
+    body {
+        padding-bottom: 70px; /* Space for bottom navigation */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Hide desktop navigation on mobile */
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 0.5rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar .container {
+        padding: 0 1rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+
+    .navbar-nav {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 0 0 16px 16px;
+    }
+
+    .navbar-nav.show {
+        display: flex;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .navbar-toggle {
+        display: block;
+        color: white;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        transition: transform 0.2s ease;
+    }
+
+    .navbar-toggle:active {
+        transform: scale(0.95);
+    }
+
+    /* Main content padding for mobile */
+    main {
+        margin-top: 60px; /* Space for fixed navbar */
+        padding-bottom: 1rem;
+    }
+
+    /* App-like cards */
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1rem;
+        border: none;
+        overflow: hidden;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Profile cards - app style */
+    .profile-card {
+        border-radius: 20px;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .profile-card:active {
+        transform: scale(0.98);
+    }
+
+    .profile-card img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    /* Stats cards - mobile friendly */
+    .stat-card {
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Buttons - app style */
+    .btn {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn:active {
+        transform: scale(0.97);
+    }
+
+    /* Container - full width on mobile */
+    .container {
+        padding: 0 1rem;
+        max-width: 100%;
+    }
+
+    /* Grid adjustments */
+    .grid {
+        gap: 1rem;
+    }
+
+    /* Typography adjustments */
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    /* Welcome banner - mobile */
+    .welcome-banner {
+        padding: 1.5rem 0;
+        margin-top: 60px;
+    }
+
+    /* Bottom Navigation Bar - Mobile App Style */
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid var(--gray-200);
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        padding: 0.5rem 0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .mobile-bottom-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 0.75rem;
+        color: var(--gray-500);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-radius: 12px;
+        min-width: 60px;
+        position: relative;
+    }
+
+    .mobile-bottom-nav a i {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .mobile-bottom-nav a span {
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .mobile-bottom-nav a.active {
+        color: var(--primary-600);
+        background: var(--primary-50);
+    }
+
+    .mobile-bottom-nav a.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 3px;
+        background: var(--primary-600);
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* Hide footer on mobile */
+    footer {
+        display: none;
+    }
+
+    /* Dashboard sections - mobile spacing */
+    section {
+        margin-bottom: 2rem;
+    }
+
+    /* Form inputs - app style */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="date"],
+    select,
+    textarea {
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+        border: 1px solid var(--gray-300);
+    }
+
+    /* Alerts - mobile style */
+    .alert {
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Profile edit page - mobile */
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+
+    /* Tab navigation - mobile */
+    .tab-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tab-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Quick actions - mobile */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        padding: 1rem 0;
+    }
+
+    .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.75rem 0.5rem;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s ease;
+    }
+
+    .quick-action:active {
+        transform: scale(0.95);
+        background: var(--gray-50);
+    }
+
+    .quick-action i {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary-600);
+    }
+
+    .quick-action span {
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Safe area for notched devices */
+    @supports (padding: max(0px)) {
+        .mobile-bottom-nav {
+            padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        }
+
+        body {
+            padding-bottom: max(70px, calc(70px + env(safe-area-inset-bottom)));
+        }
+
+        .navbar {
+            padding-top: max(0.5rem, env(safe-area-inset-top));
+        }
+
+        main {
+            margin-top: max(60px, calc(60px + env(safe-area-inset-top)));
+        }
+    }
+
+    /* Touch-friendly interactive elements */
+    a, button, .btn, .card, .profile-card {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+    }
+
+    /* Smooth scrolling on mobile */
+    * {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better text rendering on mobile */
+    body {
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* Prevent text size adjustment on orientation change */
+    html {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+    }
+
+    /* Loading states - app style */
+    .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    /* Empty states - mobile */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
+
+    /* Section headers - mobile */
+    section h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Profile images - mobile optimization */
+    img {
+        max-width: 100%;
+        height: auto;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+/* Hide mobile bottom nav on desktop */
+@media (min-width: 769px) {
+    .mobile-bottom-nav {
+        display: none !important;
+    }
+}
+

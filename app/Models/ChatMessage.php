@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\EncryptionService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -76,7 +77,28 @@ class ChatMessage extends Model
     {
         return $this->attachment_path ? asset('storage/chat/' . $this->attachment_path) : null;
     }
+
+    /**
+     * Accessor to automatically decrypt message when accessed
+     * Note: Encryption is handled in ChatService when saving
+     */
+    public function getMessageAttribute($value): string
+    {
+        if (empty($value)) {
+            return $value;
+        }
+
+        try {
+            $encryptionService = app(EncryptionService::class);
+            return $encryptionService->decrypt($value);
+        } catch (\Exception $e) {
+            \Log::error('Error decrypting message: ' . $e->getMessage());
+            // Return original value if decryption fails (for backward compatibility)
+            return $value;
+        }
+    }
 }
+
 
 
 

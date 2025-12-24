@@ -42,9 +42,16 @@ class UserPhoto extends Model
 
     public function getPhotoUrl(): string
     {
-        return asset('images/gallery/' . $this->photo_path);
+        $storagePath = $this->photo_type === 'profile' ? 'profile' : 'gallery';
+        return asset('images/' . $storagePath . '/' . $this->photo_path);
     }
 }
+
+
+
+
+
+
 
 
 

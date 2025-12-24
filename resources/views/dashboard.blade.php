@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- Welcome Banner -->
-<div style="background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%); color: white; padding: 2rem 0;">
+<div class="welcome-banner" style="background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%); color: white; padding: 2rem 0;">
     <div class="container">
         <div class="flex items-center gap-4">
             <img src="{{ $user->getProfilePhotoUrl() }}" alt="{{ $user->name }}" 
@@ -100,16 +100,27 @@
                                     </p>
                                 @endif
                                 <div class="flex gap-2 mt-3">
-                                    <form action="{{ route('interests.send', $nearbyUser->id) }}" method="POST" style="flex: 1;">
+                                    <form action="{{ route('interests.send', $nearbyUser->id) }}" method="POST" class="interest-form" data-user-id="{{ $nearbyUser->id }}">
                                         @csrf
-                                        <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                        <button type="submit" class="btn btn-primary btn-sm">
                                             <i class="fas fa-heart"></i>
                                         </button>
                                     </form>
-                                    <form action="{{ route('matches.shortlist.add', $nearbyUser->id) }}" method="POST">
+                                    @php
+                                        $isShortlistedNearby = false;
+                                        if (auth()->check()) {
+                                            try {
+                                                $matchService = app(\App\Services\MatchService::class);
+                                                $isShortlistedNearby = $matchService->isShortlisted(auth()->id(), $nearbyUser->id);
+                                            } catch (\Exception $e) {
+                                                $isShortlistedNearby = false;
+                                            }
+                                        }
+                                    @endphp
+                                    <form action="{{ route('matches.shortlist.add', $nearbyUser->id) }}" method="POST" class="shortlist-form" data-user-id="{{ $nearbyUser->id }}">
                                         @csrf
-                                        <button type="submit" class="btn btn-outline btn-sm">
-                                            <i class="far fa-star"></i>
+                                        <button type="submit" class="btn {{ $isShortlistedNearby ? 'btn-secondary' : 'btn-outline' }} btn-sm" title="{{ $isShortlistedNearby ? 'Remove from Shortlist' : 'Add to Shortlist' }}">
+                                            <i class="{{ $isShortlistedNearby ? 'fas' : 'far' }} fa-star"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -178,18 +189,21 @@
             @if(count($dailyMatches) > 0)
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     @foreach($dailyMatches as $match)
+                        @php $matchedUser = $match->matchedUser; @endphp
+                        @if($matchedUser)
                         <div class="card">
-                            <a href="{{ route('profile.show', $match->id) }}">
-                                <img src="{{ $match->getProfilePhotoUrl() }}" alt="{{ $match->name }}" 
+                            <a href="{{ route('profile.show', $matchedUser->id) }}">
+                                <img src="{{ $matchedUser->getProfilePhotoUrl() }}" alt="{{ $matchedUser->name }}" 
                                      style="width: 100%; height: 150px; object-fit: cover;">
                             </a>
                             <div class="p-3 text-center">
-                                <a href="{{ route('profile.show', $match->id) }}" style="font-weight: 600; font-size: 0.9rem;">
-                                    {{ Str::limit($match->name, 12) }}
+                                <a href="{{ route('profile.show', $matchedUser->id) }}" style="font-weight: 600; font-size: 0.9rem;">
+                                    {{ Str::limit($matchedUser->name, 12) }}
                                 </a>
-                                <p class="text-muted" style="font-size: 0.8rem; margin: 0;">{{ $match->getAge() }} yrs</p>
+                                <p class="text-muted" style="font-size: 0.8rem; margin: 0;">{{ $matchedUser->getAge() }} yrs</p>
                             </div>
                         </div>
+                        @endif
                     @endforeach
                 </div>
             @else
@@ -393,7 +407,7 @@
                                         {{ $view->created_at->diffForHumans() }}
                                     </p>
                                 </div>
-                                <form action="{{ route('interests.send', $view->viewer->id) }}" method="POST">
+                                <form action="{{ route('interests.send', $view->viewer->id) }}" method="POST" class="interest-form" data-user-id="{{ $view->viewer->id }}">
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-sm">
                                         <i class="fas fa-heart"></i>
@@ -426,7 +440,7 @@
                                         {{ $interest->created_at->diffForHumans() }}
                                     </p>
                                 </div>
-                                @if($interest->status === 'pending')
+                                @if($interest->isPending())
                                     <form action="{{ route('interests.accept', $interest->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-primary btn-sm">Accept</button>
@@ -446,4 +460,11 @@
         </section>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Interest and shortlist forms are handled globally in app.js
+    // No need for duplicate handlers here
+</script>
+@endpush
 @endsection

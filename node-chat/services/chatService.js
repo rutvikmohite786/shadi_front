@@ -1,15 +1,19 @@
 const db = require('../config/database');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 class ChatService {
     /**
-     * Save message to database
+     * Save message to database (encrypted)
      */
     async saveMessage(senderId, receiverId, message, messageType = 'text') {
         try {
+            // Encrypt the message before saving
+            const encryptedMessage = encrypt(message);
+            
             const [result] = await db.execute(
                 `INSERT INTO chat_messages (sender_id, receiver_id, message, message_type, created_at, updated_at) 
                  VALUES (?, ?, ?, ?, NOW(), NOW())`,
-                [senderId, receiverId, message, messageType]
+                [senderId, receiverId, encryptedMessage, messageType]
             );
 
             const [rows] = await db.execute(
@@ -23,6 +27,11 @@ class ChatService {
                 [result.insertId]
             );
 
+            // Decrypt message before returning
+            if (rows[0]) {
+                rows[0].message = decrypt(rows[0].message);
+            }
+
             return rows[0];
         } catch (error) {
             console.error('Error saving message:', error);
@@ -31,7 +40,7 @@ class ChatService {
     }
 
     /**
-     * Get conversation between two users
+     * Get conversation between two users (decrypted)
      */
     async getConversation(userId1, userId2, limit = 50, offset = 0) {
         try {
@@ -49,7 +58,13 @@ class ChatService {
                 [userId1, userId2, userId2, userId1, limit, offset]
             );
 
-            return rows.reverse();
+            // Decrypt all messages
+            const decryptedRows = rows.map(row => {
+                row.message = decrypt(row.message);
+                return row;
+            });
+
+            return decryptedRows.reverse();
         } catch (error) {
             console.error('Error getting conversation:', error);
             throw error;
@@ -129,6 +144,7 @@ class ChatService {
 }
 
 module.exports = new ChatService();
+
 
 
 

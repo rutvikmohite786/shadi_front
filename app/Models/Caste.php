@@ -33,3 +33,11 @@ class Caste extends Model
 
 
 
+
+
+
+
+
+
+
+

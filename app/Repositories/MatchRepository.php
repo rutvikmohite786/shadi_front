@@ -25,6 +25,11 @@ class MatchRepository
         return $this->model->create($data);
     }
 
+    public function updateOrCreate(array $attributes, array $values = []): UserMatch
+    {
+        return $this->model->updateOrCreate($attributes, $values);
+    }
+
     public function getDailyMatches(int $userId, int $limit = 10): Collection
     {
         return $this->model->where('user_id', $userId)->whereDate('matched_date', today())
@@ -59,6 +64,10 @@ class MatchRepository
             ->where('is_mutual', false)->delete();
     }
 }
+
+
+
+
 
 
 

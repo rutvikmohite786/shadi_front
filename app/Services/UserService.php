@@ -25,7 +25,10 @@ class UserService
 
     public function updateBasicInfo(User $user, array $data): bool
     {
-        return $this->userRepository->update($user, $data);
+        $result = $this->userRepository->update($user, $data);
+        // Refresh profile relationship to ensure latest data
+        $user->load('profile');
+        return $result;
     }
 
     public function updateProfile(User $user, array $profileData): bool
@@ -113,6 +116,10 @@ class UserService
         ];
     }
 }
+
+
+
+
 
 
 

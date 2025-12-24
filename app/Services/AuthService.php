@@ -16,18 +16,33 @@ class AuthService
 
     public function login(string $email, string $password, bool $remember = false): bool
     {
+        // Try to find user by email first
         $user = $this->userRepository->findByEmail($email);
+        
+        // If not found by email, try phone number
+        if (!$user) {
+            $user = $this->userRepository->findByPhone($email);
+        }
 
-        if (!$user) return false;
+        if (!$user) {
+            \Log::info('Login attempt failed: User not found', ['email_or_phone' => $email]);
+            return false;
+        }
 
         if (!$user->is_active) {
+            \Log::warning('Login attempt failed: Account deactivated', ['user_id' => $user->id]);
             throw new \Exception('Your account has been deactivated. Please contact support.');
         }
 
-        if (!Hash::check($password, $user->password)) return false;
+        // Check password
+        if (!Hash::check($password, $user->password)) {
+            \Log::info('Login attempt failed: Invalid password', ['user_id' => $user->id, 'email_or_phone' => $email]);
+            return false;
+        }
 
         Auth::login($user, $remember);
         $this->userService->recordLogin($user);
+        \Log::info('User logged in successfully', ['user_id' => $user->id]);
         return true;
     }
 
@@ -58,6 +73,9 @@ class AuthService
         return $this->userService->updatePassword($user, $newPassword);
     }
 }
+
+
+
 
 
 

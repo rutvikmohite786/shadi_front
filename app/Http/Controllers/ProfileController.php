@@ -36,8 +36,12 @@ class ProfileController extends Controller
 
     public function edit(): View
     {
-        $user = auth()->user();
-        $profile = $this->userService->getProfile($user->id);
+        $user = $this->userService->getProfile(auth()->id());
+        if (!$user) {
+            $user = auth()->user();
+            $user->load('profile');
+        }
+        $profile = $user->profile;
         $photos = $this->photoService->getUserPhotos($user->id, false);
         return view('profile.edit', compact('user', 'profile', 'photos'));
     }
@@ -125,6 +129,7 @@ class ProfileController extends Controller
         return redirect()->route('home')->with('success', 'Your account has been deactivated.');
     }
 }
+
 
 
 

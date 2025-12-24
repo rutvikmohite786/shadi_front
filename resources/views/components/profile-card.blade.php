@@ -1,6 +1,9 @@
 @php
-    $user = $profile;
+    // Support both $user and $profile variable names
+    $user = $user ?? $profile ?? null;
 @endphp
+
+@if($user)
 
 <div class="profile-card card">
     @if($user->is_verified ?? false)
@@ -37,22 +40,26 @@
         </div>
         
         <div class="profile-actions">
-            @if(!isset($isShortlisted) || !$isShortlisted)
-                <form action="{{ route('matches.shortlist.add', $user->id) }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-outline btn-sm" title="Add to Shortlist">
-                        <i class="far fa-star"></i>
-                    </button>
-                </form>
-            @else
-                <form action="{{ route('matches.shortlist.remove', $user->id) }}" method="POST" style="display: inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-secondary btn-sm" title="Remove from Shortlist">
-                        <i class="fas fa-star"></i>
-                    </button>
-                </form>
-            @endif
+            @php
+                $isShortlistedValue = isset($isShortlisted) ? $isShortlisted : false;
+                if (auth()->check() && !isset($isShortlisted)) {
+                    try {
+                        $matchService = app(\App\Services\MatchService::class);
+                        $isShortlistedValue = $matchService->isShortlisted(auth()->id(), $user->id);
+                    } catch (\Exception $e) {
+                        $isShortlistedValue = false;
+                    }
+                }
+            @endphp
+            <button 
+                type="button" 
+                class="btn btn-sm shortlist-btn {{ $isShortlistedValue ? 'btn-secondary' : 'btn-outline' }}" 
+                data-user-id="{{ $user->id }}"
+                data-shortlisted="{{ $isShortlistedValue ? '1' : '0' }}"
+                title="{{ $isShortlistedValue ? 'Remove from Shortlist' : 'Add to Shortlist' }}"
+                onclick="handleShortlistToggle({{ $user->id }}, this)">
+                <i class="{{ $isShortlistedValue ? 'fas' : 'far' }} fa-star"></i>
+            </button>
             
             @if(isset($showChat) && $showChat)
                 <a href="{{ route('chat.conversation', $user->id) }}" class="btn btn-outline btn-sm">
@@ -65,5 +72,14 @@
             </a>
         </div>
     </div>
+    
+    @if(isset($matchScore))
+        <div class="text-center py-2" style="background: var(--gray-50); border-top: 1px solid var(--gray-100);">
+            <span class="text-muted" style="font-size: 0.8rem;">
+                <i class="fas fa-percentage"></i> {{ number_format($matchScore, 0) }}% Match
+            </span>
+        </div>
+    @endif
 </div>
+@endif
 

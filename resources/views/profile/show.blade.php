@@ -21,19 +21,33 @@
                         @endif
                         
                         @if(auth()->id() !== $profile->id)
+                            @php
+                                $isShortlistedValue = false;
+                                if (auth()->check()) {
+                                    try {
+                                        $matchService = app(\App\Services\MatchService::class);
+                                        $isShortlistedValue = $matchService->isShortlisted(auth()->id(), $profile->id);
+                                    } catch (\Exception $e) {
+                                        $isShortlistedValue = false;
+                                    }
+                                }
+                            @endphp
                             <div class="flex gap-2 mt-4">
-                                <form action="{{ route('interests.send', $profile->id) }}" method="POST" style="flex: 1;">
+                                <form action="{{ route('interests.send', $profile->id) }}" method="POST" class="interest-form" data-user-id="{{ $profile->id }}" style="flex: 1;">
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-block">
                                         <i class="fas fa-heart"></i> Send Interest
                                     </button>
                                 </form>
-                                <form action="{{ route('matches.shortlist.add', $profile->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline">
-                                        <i class="far fa-star"></i>
-                                    </button>
-                                </form>
+                                <button 
+                                    type="button" 
+                                    class="btn shortlist-btn {{ $isShortlistedValue ? 'btn-secondary' : 'btn-outline' }}" 
+                                    data-user-id="{{ $profile->id }}"
+                                    data-shortlisted="{{ $isShortlistedValue ? '1' : '0' }}"
+                                    title="{{ $isShortlistedValue ? 'Remove from Shortlist' : 'Add to Shortlist' }}"
+                                    onclick="handleShortlistToggle({{ $profile->id }}, this)">
+                                    <i class="{{ $isShortlistedValue ? 'fas' : 'far' }} fa-star"></i>
+                                </button>
                             </div>
                         @endif
                     </div>

@@ -57,6 +57,15 @@ class ChatRepository
         return $this->model->where('receiver_id', $userId)->where('is_read', false)->count();
     }
 
+    public function getUnreadCountForConversation(int $userId, int $otherUserId): int
+    {
+        return $this->model->where('sender_id', $otherUserId)
+            ->where('receiver_id', $userId)
+            ->where('is_read', false)
+            ->where('is_deleted_by_receiver', false)
+            ->count();
+    }
+
     public function deleteConversation(int $userId, int $otherUserId): void
     {
         $this->model->where('sender_id', $userId)->where('receiver_id', $otherUserId)
@@ -65,6 +74,7 @@ class ChatRepository
             ->update(['is_deleted_by_receiver' => true]);
     }
 }
+
 
 
 

@@ -37,7 +37,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            // Password is manually hashed in UserService, so we don't use 'hashed' cast here
             'dob' => 'date',
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
@@ -143,13 +143,38 @@ class User extends Authenticatable
 
     public function getProfilePhotoUrl(): string
     {
+        // First, check if user has a primary photo set in UserPhoto table (this takes priority)
+        if ($this->photos()->exists()) {
+            $primaryPhoto = $this->photos()->where('is_primary', true)->first();
+            if ($primaryPhoto) {
+                // Use the getPhotoUrl method which handles the correct path based on photo_type
+                return $primaryPhoto->getPhotoUrl();
+            }
+        }
+        
+        // Check if user has uploaded profile photo (from users.profile_photo field)
         if ($this->profile_photo) {
             return asset('images/profile/' . $this->profile_photo);
         }
         
+        // Check if user has any photos uploaded (in UserPhoto table) - get approved or any photo
+        if ($this->photos()->exists()) {
+            $approvedPhoto = $this->photos()->where('is_approved', true)->first();
+            if ($approvedPhoto) {
+                return $approvedPhoto->getPhotoUrl();
+            }
+            
+            // If no approved photo, get any photo
+            $anyPhoto = $this->photos()->first();
+            if ($anyPhoto) {
+                return $anyPhoto->getPhotoUrl();
+            }
+        }
+        
+        // If no photos uploaded at all, show static images based on gender
         return $this->gender === 'female' 
-            ? asset('images/profile/default-female.jpg')
-            : asset('images/profile/default-male.jpg');
+            ? asset('images/static/default-female.jpg')
+            : asset('images/static/default-male.jpg');
     }
 
     public function isAdmin(): bool
@@ -160,5 +185,93 @@ class User extends Authenticatable
     public function hasActiveSubscription(): bool
     {
         return $this->subscription !== null;
+    }
+
+    /**
+     * Calculate profile completion percentage based on filled fields
+     */
+    public function getProfileCompletionPercentage(): int
+    {
+        $totalFields = 0;
+        $filledFields = 0;
+
+        // User basic fields (weight: 30%)
+        $userFields = [
+            'name' => 5,
+            'email' => 5,
+            'phone' => 5,
+            'gender' => 5,
+            'dob' => 5,
+            'profile_photo' => 5,
+        ];
+
+        foreach ($userFields as $field => $weight) {
+            $totalFields += $weight;
+            if (!empty($this->$field)) {
+                $filledFields += $weight;
+            }
+        }
+
+        // Profile fields (weight: 70%)
+        $profile = $this->profile;
+        if ($profile) {
+            $profileFields = [
+                // Basic Info (20%)
+                'marital_status' => 5,
+                'height' => 3,
+                'about_me' => 4,
+                'religion_id' => 4,
+                'caste_id' => 2,
+                'mother_tongue_id' => 2,
+                
+                // Location (15%)
+                'country_id' => 5,
+                'state_id' => 5,
+                'city_id' => 5,
+                
+                // Education & Career (15%)
+                'education_id' => 8,
+                'occupation_id' => 5,
+                'annual_income' => 2,
+                
+                // Lifestyle (10%)
+                'diet' => 3,
+                'smoke' => 2,
+                'drink' => 2,
+                'physical_status' => 3,
+                
+                // Family (10%)
+                'family_type' => 3,
+                'family_status' => 2,
+                'father_occupation' => 2,
+                'mother_occupation' => 2,
+                'about_family' => 1,
+            ];
+
+            foreach ($profileFields as $field => $weight) {
+                $totalFields += $weight;
+                $value = $profile->$field;
+                // Check if field is filled (not null and not empty string)
+                // For numeric fields, we check if value is greater than 0 (0 usually means not set)
+                // For string fields, any non-empty value counts
+                if ($value !== null && $value !== '') {
+                    if (is_numeric($value)) {
+                        // For numeric fields, only count if > 0 (0 means not set for most fields)
+                        if ($value > 0) {
+                            $filledFields += $weight;
+                        }
+                    } else {
+                        // For string fields, any non-empty value counts
+                        $filledFields += $weight;
+                    }
+                }
+            }
+        }
+
+        if ($totalFields === 0) {
+            return 0;
+        }
+
+        return min(100, (int) round(($filledFields / $totalFields) * 100));
     }
 }

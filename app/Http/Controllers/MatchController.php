@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\MatchService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,15 +36,31 @@ class MatchController extends Controller
         return view('matches.shortlist', compact('shortlisted'));
     }
 
-    public function addToShortlist(int $userId): RedirectResponse
+    public function addToShortlist(Request $request, int $userId): RedirectResponse|JsonResponse
     {
         $this->matchService->shortlist(auth()->id(), $userId);
+        
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile added to shortlist.'
+            ]);
+        }
+        
         return back()->with('success', 'Profile added to shortlist.');
     }
 
-    public function removeFromShortlist(int $userId): RedirectResponse
+    public function removeFromShortlist(Request $request, int $userId): RedirectResponse|JsonResponse
     {
         $this->matchService->removeFromShortlist(auth()->id(), $userId);
+        
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile removed from shortlist.'
+            ]);
+        }
+        
         return back()->with('success', 'Profile removed from shortlist.');
     }
 
@@ -65,6 +82,9 @@ class MatchController extends Controller
         return back()->with('success', 'Profile unignored.');
     }
 }
+
+
+
 
 
 

@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 // CORS configuration
 const corsOptions = {
-    origin: config.corsOrigins.split(','),
+    origin: '*',
     methods: ['GET', 'POST'],
     credentials: true
 };
@@ -69,6 +69,7 @@ process.on('SIGTERM', () => {
 });
 
 module.exports = { app, io };
+
 
 
 

@@ -45,6 +45,48 @@
         </div>
     </section>
 
+    <!-- Highlights Section -->
+    <section class="py-16" style="background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Commitment to You</h2>
+                <p>We prioritize your safety, privacy, and satisfaction above all else.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="feature-card" data-animate="slide-up" data-animate-delay="0" style="background: white; border: 2px solid var(--primary-200);">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);">
+                        <i class="fas fa-user-check" style="color: var(--primary-600);"></i>
+                    </div>
+                    <h3 style="color: var(--primary-700); margin-bottom: 1rem;">Manual Image Verification</h3>
+                    <p style="color: var(--gray-700); line-height: 1.8;">
+                        We manually verify every image to ensure authenticity. We do not use AI to detect fake images - our dedicated team personally reviews each photo to protect you from deception.
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-animate="slide-up" data-animate-delay="100" style="background: white; border: 2px solid var(--primary-200);">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);">
+                        <i class="fas fa-shield-alt" style="color: var(--primary-600);"></i>
+                    </div>
+                    <h3 style="color: var(--primary-700); margin-bottom: 1rem;">Privacy First</h3>
+                    <p style="color: var(--gray-700); line-height: 1.8;">
+                        We do not show any personal information without your explicit consent. Your privacy is our top priority, and we ensure your sensitive details remain protected and confidential.
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-animate="slide-up" data-animate-delay="200" style="background: white; border: 2px solid var(--primary-200);">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, var(--secondary-100) 0%, var(--secondary-200) 100%);">
+                        <i class="fas fa-gift" style="color: var(--secondary-600);"></i>
+                    </div>
+                    <h3 style="color: var(--primary-700); margin-bottom: 1rem;">Free Subscription Offer</h3>
+                    <p style="color: var(--gray-700); line-height: 1.8;">
+                        Be among the first 10,000 users and get a free subscription! Join now to unlock premium features and enhance your matchmaking experience at no cost.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Features Section -->
     <section class="features" id="features">
         <div class="container">

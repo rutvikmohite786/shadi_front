@@ -23,3 +23,11 @@ class Education extends Model
 
 
 
+
+
+
+
+
+
+
+

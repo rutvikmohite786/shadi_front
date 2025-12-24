@@ -335,6 +335,240 @@
     // ==========================================================================
     // Interest/Shortlist Actions
     // ==========================================================================
+    
+    // Global handler for interest forms (AJAX)
+    function initInterestForms() {
+        document.querySelectorAll('.interest-form').forEach(function(form) {
+            // Skip if already initialized
+            if (form.dataset.ajaxInitialized === 'true') {
+                return;
+            }
+            form.dataset.ajaxInitialized = 'true';
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formElement = this;
+                const button = formElement.querySelector('button[type="submit"]');
+                const userId = formElement.getAttribute('data-user-id') || formElement.action.match(/\/(\d+)$/)?.[1];
+                const originalButtonText = button.innerHTML;
+                const originalButtonDisabled = button.disabled;
+                
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                // Get CSRF token
+                const csrfToken = formElement.querySelector('[name="_token"]')?.value || 
+                                 document.querySelector('meta[name="csrf-token"]')?.content;
+                
+                fetch(formElement.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(function(response) {
+                    return response.json().then(function(data) {
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Failed to send interest');
+                        }
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        // Update button state
+                        button.innerHTML = '<i class="fas fa-check"></i> Interest Sent';
+                        button.disabled = true;
+                        button.classList.remove('btn-primary');
+                        button.classList.add('btn-secondary');
+                        
+                        showToast(data.message || 'Interest sent successfully!', 'success');
+                        
+                        // Remove the card if it's in a grid (dashboard behavior)
+                        const card = formElement.closest('.card') || formElement.closest('.profile-card');
+                        const grid = card ? card.closest('.grid') : null;
+                        
+                        if (card && grid) {
+                            // Remove card with fade out animation
+                            setTimeout(function() {
+                                card.style.transition = 'opacity 0.3s ease';
+                                card.style.opacity = '0';
+                                setTimeout(function() {
+                                    card.remove();
+                                    
+                                    // Check if grid is empty
+                                    if (grid && grid.children.length === 0) {
+                                        const gridParent = grid.parentElement;
+                                        if (gridParent) {
+                                            gridParent.innerHTML = '<div class="card p-6 text-center"><i class="fas fa-check-circle fa-3x text-success mb-3" style="display: block;"></i><p class="text-muted">All profiles processed!</p></div>';
+                                        }
+                                    }
+                                }, 300);
+                            }, 500);
+                        } else if (card && card.dataset.removeOnInterest === 'true') {
+                            // Remove card if explicitly marked
+                            setTimeout(function() {
+                                card.style.transition = 'opacity 0.3s ease';
+                                card.style.opacity = '0';
+                                setTimeout(function() {
+                                    card.remove();
+                                }, 300);
+                            }, 1000);
+                        }
+                    } else {
+                        throw new Error(data.message || 'Failed to send interest');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    showToast(error.message || 'Failed to send interest. Please try again.', 'danger');
+                    
+                    // Restore button state
+                    button.disabled = originalButtonDisabled;
+                    button.innerHTML = originalButtonText;
+                });
+            });
+        });
+    }
+    
+    // Initialize interest forms on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initInterestForms();
+    });
+    
+    // Re-initialize after dynamic content loads
+    window.initInterestForms = initInterestForms;
+    
+    // Global handler for shortlist forms (AJAX)
+    function initShortlistForms() {
+        document.querySelectorAll('.shortlist-form').forEach(function(form) {
+            // Skip if already initialized
+            if (form.dataset.ajaxInitialized === 'true') {
+                return;
+            }
+            form.dataset.ajaxInitialized = 'true';
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formElement = this;
+                const button = formElement.querySelector('button[type="submit"]');
+                const userId = formElement.getAttribute('data-user-id') || formElement.action.match(/\/(\d+)$/)?.[1];
+                const originalButtonText = button.innerHTML;
+                const originalButtonDisabled = button.disabled;
+                
+                // Determine if this is add or remove based on button state
+                // If button has btn-secondary class, it means it's currently shortlisted (remove action)
+                // If button has btn-outline class, it means it's not shortlisted (add action)
+                const isCurrentlyShortlisted = button.classList.contains('btn-secondary');
+                const isRemove = isCurrentlyShortlisted;
+                
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // Get CSRF token
+                const csrfToken = formElement.querySelector('[name="_token"]')?.value || 
+                                 document.querySelector('meta[name="csrf-token"]')?.content;
+                
+                // Determine method and URL
+                // Routes: POST /matches/shortlist/{user} for add, DELETE /matches/shortlist/{user} for remove
+                const method = isRemove ? 'DELETE' : 'POST';
+                let url = formElement.action;
+                // Ensure URL is correct - remove any /add or /remove suffix
+                url = url.replace(/\/add$/, '').replace(/\/remove$/, '');
+                
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(function(response) {
+                    return response.json().then(function(data) {
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Failed to update shortlist');
+                        }
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        // Toggle button state
+                        if (isRemove) {
+                            // Was shortlisted, now removed - show outline star
+                            button.innerHTML = '<i class="far fa-star"></i>';
+                            button.classList.remove('btn-secondary');
+                            button.classList.add('btn-outline');
+                            button.setAttribute('title', 'Add to Shortlist');
+                        } else {
+                            // Was not shortlisted, now added - show filled star
+                            button.innerHTML = '<i class="fas fa-star"></i>';
+                            button.classList.remove('btn-outline');
+                            button.classList.add('btn-secondary');
+                            button.setAttribute('title', 'Remove from Shortlist');
+                        }
+                        
+                        showToast(data.message || (isRemove ? 'Removed from shortlist' : 'Added to shortlist!'), 'success');
+                        
+                        // Remove the card if it's in a grid and we're removing (dashboard behavior)
+                        const card = formElement.closest('.card') || formElement.closest('.profile-card');
+                        const grid = card ? card.closest('.grid') : null;
+                        
+                        if (card && grid && isRemove) {
+                            // Only remove card if we're removing from shortlist
+                            setTimeout(function() {
+                                card.style.transition = 'opacity 0.3s ease';
+                                card.style.opacity = '0';
+                                setTimeout(function() {
+                                    card.remove();
+                                    
+                                    // Check if grid is empty
+                                    if (grid && grid.children.length === 0) {
+                                        const gridParent = grid.parentElement;
+                                        if (gridParent) {
+                                            gridParent.innerHTML = '<div class="card p-6 text-center"><i class="fas fa-check-circle fa-3x text-success mb-3" style="display: block;"></i><p class="text-muted">All profiles processed!</p></div>';
+                                        }
+                                    }
+                                }, 300);
+                            }, 500);
+                        }
+                        
+                        button.disabled = false;
+                    } else {
+                        throw new Error(data.message || 'Failed to update shortlist');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    showToast(error.message || 'Failed to update shortlist. Please try again.', 'danger');
+                    
+                    // Restore button state
+                    button.disabled = originalButtonDisabled;
+                    button.innerHTML = originalButtonText;
+                });
+            });
+        });
+    }
+    
+    // Initialize shortlist forms on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initShortlistForms();
+    });
+    
+    // Re-initialize after dynamic content loads
+    window.initShortlistForms = initShortlistForms;
+    
     window.sendInterest = function(userId) {
         ajaxRequest('/interests/send/' + userId, {
             method: 'POST'
@@ -355,36 +589,98 @@
         });
     };
 
-    window.addToShortlist = function(userId) {
-        ajaxRequest('/matches/shortlist/' + userId, {
-            method: 'POST'
-        })
-        .then(function(response) {
-            showToast('Added to shortlist!', 'success');
-            // Update UI
-            const btn = document.querySelector('[data-shortlist-btn="' + userId + '"]');
-            if (btn) {
-                btn.innerHTML = '★ Shortlisted';
-                btn.classList.add('active');
+    window.handleShortlistToggle = function(userId, buttonElement) {
+        const isShortlisted = buttonElement.getAttribute('data-shortlisted') === '1';
+        const url = '/matches/shortlist/' + userId;
+        const method = isShortlisted ? 'DELETE' : 'POST';
+        
+        // Disable button during request
+        buttonElement.disabled = true;
+        const originalHTML = buttonElement.innerHTML;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        ajaxRequest(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || 
+                               document.querySelector('input[name="_token"]')?.value
             }
         })
+        .then(function(response) {
+            // Update button state
+            if (isShortlisted) {
+                // Was shortlisted, now removed
+                buttonElement.classList.remove('btn-secondary');
+                buttonElement.classList.add('btn-outline');
+                buttonElement.setAttribute('data-shortlisted', '0');
+                buttonElement.setAttribute('title', 'Add to Shortlist');
+                buttonElement.innerHTML = '<i class="far fa-star"></i>';
+                showToast('Removed from shortlist', 'info');
+            } else {
+                // Was not shortlisted, now added
+                buttonElement.classList.remove('btn-outline');
+                buttonElement.classList.add('btn-secondary');
+                buttonElement.setAttribute('data-shortlisted', '1');
+                buttonElement.setAttribute('title', 'Remove from Shortlist');
+                buttonElement.innerHTML = '<i class="fas fa-star"></i>';
+                showToast('Added to shortlist!', 'success');
+            }
+            buttonElement.disabled = false;
+        })
         .catch(function(error) {
-            showToast('Failed to add to shortlist. Please try again.', 'danger');
+            // Restore original state on error
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+            showToast(isShortlisted ? 'Failed to remove from shortlist.' : 'Failed to add to shortlist. Please try again.', 'danger');
         });
     };
 
+    window.addToShortlist = function(userId) {
+        const btn = document.querySelector('.shortlist-btn[data-user-id="' + userId + '"]');
+        if (btn) {
+            handleShortlistToggle(userId, btn);
+        } else {
+            ajaxRequest('/matches/shortlist/' + userId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || 
+                                   document.querySelector('input[name="_token"]')?.value
+                }
+            })
+            .then(function(response) {
+                showToast('Added to shortlist!', 'success');
+            })
+            .catch(function(error) {
+                showToast('Failed to add to shortlist. Please try again.', 'danger');
+            });
+        }
+    };
+
     window.removeFromShortlist = function(userId) {
-        ajaxRequest('/matches/shortlist/' + userId, {
-            method: 'DELETE'
-        })
-        .then(function(response) {
-            showToast('Removed from shortlist', 'info');
-            // Update UI or reload
-            location.reload();
-        })
-        .catch(function(error) {
-            showToast('Failed to remove from shortlist.', 'danger');
-        });
+        const btn = document.querySelector('.shortlist-btn[data-user-id="' + userId + '"]');
+        if (btn) {
+            handleShortlistToggle(userId, btn);
+        } else {
+            ajaxRequest('/matches/shortlist/' + userId, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || 
+                                   document.querySelector('input[name="_token"]')?.value
+                }
+            })
+            .then(function(response) {
+                showToast('Removed from shortlist', 'info');
+            })
+            .catch(function(error) {
+                showToast('Failed to remove from shortlist.', 'danger');
+            });
+        }
     };
 
 })();

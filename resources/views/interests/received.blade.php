@@ -46,7 +46,7 @@
                             </div>
                         </div>
                         
-                        @if($interest->status === 'pending')
+                        @if($interest->isPending())
                             <div class="flex gap-2 p-4" style="border-top: 1px solid var(--gray-100);">
                                 <form action="{{ route('interests.accept', $interest->id) }}" method="POST" style="flex: 1;">
                                     @csrf
@@ -77,7 +77,7 @@
                 @endforeach
             </div>
             
-            @if($interests->hasPages())
+            @if(method_exists($interests, 'hasPages') && $interests->hasPages())
                 <div class="mt-6">
                     {{ $interests->links() }}
                 </div>

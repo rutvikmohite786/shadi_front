@@ -29,7 +29,9 @@
         @if(isset($matches) && count($matches) > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($matches as $match)
-                    @include('components.profile-card', ['profile' => $match, 'showChat' => true])
+                    @if($match->matchedUser)
+                        @include('components.profile-card', ['user' => $match->matchedUser, 'showChat' => true])
+                    @endif
                 @endforeach
             </div>
         @else

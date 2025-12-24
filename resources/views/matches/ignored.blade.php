@@ -29,7 +29,8 @@
         @if(isset($ignored) && count($ignored) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($ignored as $item)
-                    @php $user = $item->ignored ?? $item; @endphp
+                    @php $user = $item->ignoredUser; @endphp
+                    @if($user)
                     <div class="card">
                         <div class="flex gap-4 p-4">
                             <img src="{{ $user->getProfilePhotoUrl() }}" alt="{{ $user->name }}"
@@ -53,10 +54,11 @@
                             </form>
                         </div>
                     </div>
+                    @endif
                 @endforeach
             </div>
             
-            @if($ignored->hasPages())
+            @if(method_exists($ignored, 'hasPages') && $ignored->hasPages())
                 <div class="mt-6">
                     {{ $ignored->links() }}
                 </div>

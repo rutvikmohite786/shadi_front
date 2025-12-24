@@ -47,7 +47,7 @@
                         </div>
                         
                         <div class="p-4" style="border-top: 1px solid var(--gray-100);">
-                            @if($interest->status === 'pending')
+                            @if($interest->isPending())
                                 <span class="badge badge-secondary"><i class="fas fa-clock"></i> Pending</span>
                                 <form action="{{ route('interests.cancel', $interest->id) }}" method="POST" style="display: inline; float: right;">
                                     @csrf
@@ -69,7 +69,7 @@
                 @endforeach
             </div>
             
-            @if($interests->hasPages())
+            @if(method_exists($interests, 'hasPages') && $interests->hasPages())
                 <div class="mt-6">
                     {{ $interests->links() }}
                 </div>

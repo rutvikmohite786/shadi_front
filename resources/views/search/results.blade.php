@@ -126,7 +126,7 @@
                         @endforeach
                     </div>
                     
-                    @if($results->hasPages())
+                    @if(method_exists($results, 'hasPages') && $results->hasPages())
                         <div class="mt-6">
                             {{ $results->withQueryString()->links() }}
                         </div>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ChatMessage;
 use App\Models\User;
 use App\Repositories\ChatRepository;
+use App\Services\EncryptionService;
 use Illuminate\Database\Eloquent\Collection;
 
 class ChatService
@@ -39,10 +40,14 @@ class ChatService
             return ['success' => false, 'message' => $canChat['message']];
         }
 
+        // Encrypt the message before saving
+        $encryptionService = app(EncryptionService::class);
+        $encryptedMessage = $encryptionService->encrypt($message);
+
         $chatMessage = $this->chatRepository->create([
             'sender_id' => $sender->id,
             'receiver_id' => $receiverId,
-            'message' => $message,
+            'message' => $encryptedMessage,
             'message_type' => $type,
             'attachment_path' => $attachment,
         ]);
@@ -51,6 +56,9 @@ class ChatService
         if ($existingMessages->count() <= 1) {
             $this->subscriptionService->incrementChat($sender);
         }
+
+        // Decrypt message before returning
+        $chatMessage->message = $message; // Use original decrypted message for response
 
         return [
             'success' => true,
@@ -67,7 +75,14 @@ class ChatService
 
     public function getConversationList(int $userId): Collection
     {
-        return $this->chatRepository->getConversationList($userId);
+        $conversations = $this->chatRepository->getConversationList($userId);
+        
+        // Add unread count for each conversation
+        return $conversations->map(function ($message) use ($userId) {
+            $otherUserId = $message->sender_id === $userId ? $message->receiver_id : $message->sender_id;
+            $message->unread_count = $this->chatRepository->getUnreadCountForConversation($userId, $otherUserId);
+            return $message;
+        });
     }
 
     public function markAsRead(int $userId, int $senderId): void
@@ -103,6 +118,7 @@ class ChatService
         return "$header.$payloadEncoded.$signature";
     }
 }
+
 
 
 

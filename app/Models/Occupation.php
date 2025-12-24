@@ -21,3 +21,11 @@ class Occupation extends Model
 
 
 
+
+
+
+
+
+
+
+

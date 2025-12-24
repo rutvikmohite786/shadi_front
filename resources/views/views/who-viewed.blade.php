@@ -46,7 +46,7 @@
                             <a href="{{ route('profile.show', $view->viewer->id) }}" class="btn btn-outline btn-sm" style="flex: 1;">
                                 View Profile
                             </a>
-                            <form action="{{ route('interests.send', $view->viewer->id) }}" method="POST" style="flex: 1;">
+                            <form action="{{ route('interests.send', $view->viewer->id) }}" method="POST" class="interest-form" data-user-id="{{ $view->viewer->id }}" style="flex: 1;">
                                 @csrf
                                 <button type="submit" class="btn btn-primary btn-sm btn-block">
                                     <i class="fas fa-heart"></i> Interest
@@ -57,7 +57,7 @@
                 @endforeach
             </div>
             
-            @if($viewers->hasPages())
+            @if(method_exists($viewers, 'hasPages') && $viewers->hasPages())
                 <div class="mt-6">
                     {{ $viewers->links() }}
                 </div>
