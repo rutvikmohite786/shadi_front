@@ -67,6 +67,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('photo/{photo}', [ProfileController::class, 'deletePhoto'])->name('photo.delete');
         Route::post('photo/{photo}/primary', [ProfileController::class, 'setPrimaryPhoto'])->name('photo.primary');
         Route::post('deactivate', [ProfileController::class, 'deactivate'])->name('deactivate');
+        Route::get('biodata/download', [ProfileController::class, 'downloadBiodata'])->name('biodata.download');
+        Route::get('biodata/download/pdf', [ProfileController::class, 'downloadBiodataPdf'])->name('biodata.download.pdf');
     });
     
     // View Other Profiles

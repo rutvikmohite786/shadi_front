@@ -70,7 +70,7 @@
                     </div>
                     <h3 style="color: var(--primary-700); margin-bottom: 1rem;">Privacy First</h3>
                     <p style="color: var(--gray-700); line-height: 1.8;">
-                        We do not show any personal information without your explicit consent. Your privacy is our top priority, and we ensure your sensitive details remain protected and confidential.
+                        We do not show any personal information without your explicit consent. We never share your phone number with other apps or platforms—only you decide when and with whom to share it. Your privacy is our top priority, and we ensure your sensitive details remain protected and confidential.
                     </p>
                 </div>
                 

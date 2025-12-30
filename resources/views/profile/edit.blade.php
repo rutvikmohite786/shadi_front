@@ -100,8 +100,15 @@
 <div class="py-8">
     <div class="container">
         <div class="dashboard-header mb-6">
-            <h1>Edit Your Profile</h1>
-            <p>Complete your profile to get better matches</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div>
+                    <h1>Edit Your Profile</h1>
+                    <p>Complete your profile to get better matches</p>
+                </div>
+                <a href="{{ route('profile.biodata.download.pdf') }}" class="btn btn-secondary btn-sm" aria-label="Download your biodata as PDF" tabindex="0">
+                    <i class="fas fa-file-download"></i> Download Bio Data (PDF)
+                </a>
+            </div>
         </div>
 
         <!-- Profile Completion Progress -->
@@ -723,7 +730,7 @@
                         @foreach($photos as $photo)
                             <div class="card" style="position: relative;">
                                 <img src="{{ $photo->getPhotoUrl() }}" alt="Photo" 
-                                     style="width: 100%; height: 200px; object-fit: cover;"
+                                     style="width: 100%; height: 260px; object-fit: cover;"
                                      onerror="this.src='{{ asset('images/static/default-' . (auth()->user()->gender === 'female' ? 'female' : 'male') . '.jpg') }}'; this.onerror=null;">
                                 @if($photo->is_primary)
                                     <span class="badge badge-primary" style="position: absolute; top: 10px; left: 10px;">Primary</span>

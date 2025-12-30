@@ -10,6 +10,8 @@ use App\Services\AuthService;
 use App\Services\PhotoService;
 use App\Services\ProfileViewService;
 use App\Services\UserService;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -133,6 +135,57 @@ class ProfileController extends Controller
         $this->userService->deactivateAccount(auth()->user());
         $this->authService->logout();
         return redirect()->route('home')->with('success', 'Your account has been deactivated.');
+    }
+
+    public function downloadBiodata()
+    {
+        $user = $this->userService->getProfile(auth()->id());
+        if (!$user) {
+            abort(404);
+        }
+
+        $profile = $user->profile;
+        $photos = $this->photoService->getUserPhotos($user->id, false);
+        $primaryPhoto = $photos->firstWhere('is_primary', true) ?? $photos->first();
+        $photoUrl = $primaryPhoto?->getPhotoUrl();
+        $fileName = 'biodata-' . $user->id . '.html';
+
+        return response()->streamDownload(function () use ($user, $profile, $photoUrl) {
+            echo view('profile.biodata', compact('user', 'profile', 'photoUrl'))->render();
+        }, $fileName, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+        ]);
+    }
+
+    public function downloadBiodataPdf()
+    {
+        $user = $this->userService->getProfile(auth()->id());
+        if (!$user) {
+            abort(404);
+        }
+
+        $profile = $user->profile;
+        $photos = $this->photoService->getUserPhotos($user->id, false);
+        $primaryPhoto = $photos->firstWhere('is_primary', true) ?? $photos->first();
+        $photoUrl = $primaryPhoto?->getPhotoUrl();
+
+        $html = view('profile.biodata-pdf', compact('user', 'profile', 'photoUrl'))->render();
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $fileName = 'biodata-' . $user->id . '.pdf';
+
+        return response()->streamDownload(function () use ($dompdf) {
+            echo $dompdf->output();
+        }, $fileName, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 }
 

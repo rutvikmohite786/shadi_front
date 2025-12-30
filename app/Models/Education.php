@@ -35,3 +35,4 @@ class Education extends Model
 
 
 
+

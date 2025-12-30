@@ -39,3 +39,4 @@ class Religion extends Model
 
 
 
+
