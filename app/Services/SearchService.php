@@ -4,16 +4,25 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Repositories\IgnoreRepository;
+use App\Repositories\InterestRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class SearchService
 {
-    public function __construct(protected IgnoreRepository $ignoreRepository) {}
+    public function __construct(
+        protected IgnoreRepository $ignoreRepository,
+        protected InterestRepository $interestRepository
+    ) {}
 
     public function search(User $currentUser, array $filters, int $perPage = 20): LengthAwarePaginator
     {
         $ignoredIds = $this->ignoreRepository->getIgnoredUserIds($currentUser->id);
         $ignoredIds[] = $currentUser->id;
+        
+        // Exclude users who have interests (sent or received) with current user
+        $interestUserIds = $this->interestRepository->getUserIdsWithInterests($currentUser->id);
+        $ignoredIds = array_merge($ignoredIds, $interestUserIds);
+        $ignoredIds = array_unique($ignoredIds);
 
         $query = User::where('is_active', true)->where('profile_completed', true)
             ->whereNotIn('id', $ignoredIds)
@@ -82,6 +91,11 @@ class SearchService
     {
         $ignoredIds = $this->ignoreRepository->getIgnoredUserIds($currentUser->id);
         $ignoredIds[] = $currentUser->id;
+        
+        // Exclude users who have interests (sent or received) with current user
+        $interestUserIds = $this->interestRepository->getUserIdsWithInterests($currentUser->id);
+        $ignoredIds = array_merge($ignoredIds, $interestUserIds);
+        $ignoredIds = array_unique($ignoredIds);
 
         return User::where('is_active', true)->where('profile_completed', true)
             ->whereNotIn('id', $ignoredIds)

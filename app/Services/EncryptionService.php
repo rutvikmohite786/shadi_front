@@ -74,13 +74,22 @@ class EncryptionService
             $decrypted = openssl_decrypt($encrypted, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
 
             if ($decrypted === false) {
-                throw new Exception('Decryption failed');
+                $error = openssl_error_string();
+                // Don't throw - return the encrypted text so caller can decide what to do
+                \Log::warning('Decryption failed: ' . ($error ?: 'Unknown error'), [
+                    'encrypted_preview' => substr($encryptedText, 0, 50)
+                ]);
+                return $encryptedText; // Return original if decryption fails
             }
 
             return $decrypted;
         } catch (Exception $e) {
-            \Log::error('Decryption error: ' . $e->getMessage());
-            // Return original text if decryption fails (for backward compatibility)
+            \Log::error('Decryption exception: ' . $e->getMessage(), [
+                'encrypted_preview' => substr($encryptedText, 0, 50),
+                'has_colon' => strpos($encryptedText, ':') !== false
+            ]);
+            // Return original encrypted text instead of throwing
+            // This allows the system to continue and caller can handle gracefully
             return $encryptedText;
         }
     }

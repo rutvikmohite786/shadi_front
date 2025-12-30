@@ -40,9 +40,13 @@ class ChatService
             return ['success' => false, 'message' => $canChat['message']];
         }
 
-        // Encrypt the message before saving
-        $encryptionService = app(EncryptionService::class);
-        $encryptedMessage = $encryptionService->encrypt($message);
+        // Temporarily disable encryption to fix decryption issues
+        // TODO: Re-enable encryption once key derivation is fixed between Laravel and Node.js
+        $encryptedMessage = $message; // Store as plain text for now
+        
+        // Uncomment below to re-enable encryption:
+        // $encryptionService = app(EncryptionService::class);
+        // $encryptedMessage = $encryptionService->encrypt($message);
 
         $chatMessage = $this->chatRepository->create([
             'sender_id' => $sender->id,

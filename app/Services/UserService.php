@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Repositories\InterestRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserProfileRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -12,7 +13,8 @@ class UserService
 {
     public function __construct(
         protected UserRepository $userRepository,
-        protected UserProfileRepository $profileRepository
+        protected UserProfileRepository $profileRepository,
+        protected InterestRepository $interestRepository
     ) {}
 
     public function register(array $data): User
@@ -62,9 +64,9 @@ class UserService
         return $this->userRepository->searchProfiles($filters);
     }
 
-    public function getNewProfiles(int $limit = 10)
+    public function getNewProfiles(?int $currentUserId = null, int $limit = 10)
     {
-        return $this->userRepository->getNewProfiles($limit);
+        return $this->userRepository->getNewProfiles($limit, $currentUserId);
     }
 
     public function deactivateAccount(User $user): bool

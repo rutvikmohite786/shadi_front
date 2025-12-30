@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\UserMatch;
 use App\Repositories\IgnoreRepository;
+use App\Repositories\InterestRepository;
 use App\Repositories\MatchRepository;
 use App\Repositories\ShortlistRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,13 +16,19 @@ class MatchService
     public function __construct(
         protected MatchRepository $matchRepository,
         protected ShortlistRepository $shortlistRepository,
-        protected IgnoreRepository $ignoreRepository
+        protected IgnoreRepository $ignoreRepository,
+        protected InterestRepository $interestRepository
     ) {}
 
     public function generateDailyMatches(User $user): Collection
     {
         $ignoredIds = $this->ignoreRepository->getIgnoredUserIds($user->id);
         $ignoredIds[] = $user->id;
+        
+        // Exclude users who have interests (sent or received) with current user
+        $interestUserIds = $this->interestRepository->getUserIdsWithInterests($user->id);
+        $ignoredIds = array_merge($ignoredIds, $interestUserIds);
+        $ignoredIds = array_unique($ignoredIds);
 
         $oppositeGender = $user->gender === 'male' ? 'female' : 'male';
         

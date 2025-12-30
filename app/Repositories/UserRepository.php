@@ -3,12 +3,16 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Repositories\InterestRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserRepository
 {
-    public function __construct(protected User $model) {}
+    public function __construct(
+        protected User $model,
+        protected InterestRepository $interestRepository
+    ) {}
 
     public function find(int $id): ?User
     {
@@ -46,16 +50,33 @@ class UserRepository
             ->with('profile')->orderBy('last_login_at', 'desc')->paginate($perPage);
     }
 
-    public function getNewProfiles(int $limit = 10): Collection
+    public function getNewProfiles(int $limit = 10, ?int $excludeUserId = null): Collection
     {
-        return $this->model->active()->verified()->profileCompleted()
-            ->with('profile')->orderBy('created_at', 'desc')->limit($limit)->get();
+        $query = $this->model->active()->verified()->profileCompleted()
+            ->with('profile');
+        
+        if ($excludeUserId) {
+            // Exclude users who have interests (sent or received) with the current user
+            $interestUserIds = $this->interestRepository->getUserIdsWithInterests($excludeUserId);
+            $excludeIds = array_merge([$excludeUserId], $interestUserIds);
+            $query->whereNotIn('id', $excludeIds);
+        }
+        
+        return $query->orderBy('created_at', 'desc')->limit($limit)->get();
     }
 
     public function searchProfiles(array $filters, int $perPage = 20): LengthAwarePaginator
     {
         $query = $this->model->active()->verified()->profileCompleted()
             ->with(['profile', 'profile.religion', 'profile.caste', 'profile.city']);
+
+        // Exclude current user and users with interests
+        if (isset($filters['exclude_user_id'])) {
+            $excludeUserId = $filters['exclude_user_id'];
+            $interestUserIds = $this->interestRepository->getUserIdsWithInterests($excludeUserId);
+            $excludeIds = array_merge([$excludeUserId], $interestUserIds);
+            $query->whereNotIn('id', $excludeIds);
+        }
 
         if (isset($filters['looking_for'])) {
             $query->where('gender', $filters['looking_for']);

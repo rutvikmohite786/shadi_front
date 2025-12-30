@@ -31,7 +31,13 @@ class ProfileController extends Controller
             app(ProfileViewService::class)->recordView(auth()->id(), $id);
         }
 
-        return view('profile.show', compact('profile'));
+        // Get photos for display
+        // If viewing own profile, show all photos (including pending)
+        // If viewing other's profile, show only approved photos
+        $approvedOnly = auth()->id() !== $id;
+        $photos = $this->photoService->getUserPhotos($id, $approvedOnly);
+
+        return view('profile.show', compact('profile', 'photos'));
     }
 
     public function edit(): View

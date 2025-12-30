@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Plan;
 use App\Models\User;
+use App\Repositories\InterestRepository;
 use App\Services\InterestService;
 use App\Services\MatchService;
 use App\Services\ProfileViewService;
@@ -16,7 +17,8 @@ class DashboardController extends Controller
         protected UserService $userService,
         protected MatchService $matchService,
         protected InterestService $interestService,
-        protected ProfileViewService $profileViewService
+        protected ProfileViewService $profileViewService,
+        protected InterestRepository $interestRepository
     ) {}
 
     public function index(): View
@@ -25,7 +27,7 @@ class DashboardController extends Controller
         $user->load('profile');
 
         $dailyMatches = $this->matchService->getDailyMatches($user, 6);
-        $newProfiles = $this->userService->getNewProfiles(6);
+        $newProfiles = $this->userService->getNewProfiles($user->id, 6);
         $recentProfileViews = $this->profileViewService->getRecentViewers($user->id, 5);
         $receivedInterests = $this->interestService->getReceivedInterests($user->id, 5);
         $sentInterests = $this->interestService->getSentInterests($user->id, 5);
@@ -61,9 +63,13 @@ class DashboardController extends Controller
         try {
             $oppositeGender = $user->gender === 'male' ? 'female' : 'male';
             
+            // Exclude users who have interests (sent or received) with current user
+            $interestUserIds = $this->interestRepository->getUserIdsWithInterests($user->id);
+            $excludeIds = array_merge([$user->id], $interestUserIds);
+            
             // If user has profile with location/religion, use smart matching
             if ($user->profile && ($user->profile->city_id || $user->profile->state_id || $user->profile->religion_id)) {
-                return User::where('users.id', '!=', $user->id)
+                return User::whereNotIn('users.id', $excludeIds)
                     ->where('users.gender', $oppositeGender)
                     ->where('users.is_active', true)
                     ->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
@@ -90,7 +96,7 @@ class DashboardController extends Controller
             }
             
             // Fallback: just get opposite gender profiles
-            return User::where('users.id', '!=', $user->id)
+            return User::whereNotIn('users.id', $excludeIds)
                 ->where('users.gender', $oppositeGender)
                 ->where('users.is_active', true)
                 ->with(['profile.city', 'profile.education', 'profile.religion'])
@@ -112,7 +118,11 @@ class DashboardController extends Controller
         $oppositeGender = $user->gender === 'male' ? 'female' : 'male';
         
         try {
-            return User::where('users.id', '!=', $user->id)
+            // Exclude users who have interests (sent or received) with current user
+            $interestUserIds = $this->interestRepository->getUserIdsWithInterests($user->id);
+            $excludeIds = array_merge([$user->id], $interestUserIds);
+            
+            return User::whereNotIn('users.id', $excludeIds)
                 ->where('users.gender', $oppositeGender)
                 ->where('users.is_active', true)
                 ->where('users.is_verified', true)

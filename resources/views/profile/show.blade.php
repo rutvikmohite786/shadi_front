@@ -53,6 +53,35 @@
                     </div>
                 </div>
                 
+                <!-- Photo Gallery -->
+                @if(isset($photos) && count($photos) > 0)
+                <div class="card p-4 mb-4">
+                    <h5 class="mb-3"><i class="fas fa-images text-primary"></i> Photo Gallery <span class="text-muted" style="font-size: 0.9rem; font-weight: normal;">({{ count($photos) }})</span></h5>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        @foreach($photos as $photo)
+                            <div class="relative" style="position: relative; cursor: pointer; overflow: hidden; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" 
+                                 onclick="openImageModal('{{ $photo->getPhotoUrl() }}', '{{ $profile->name }}')">
+                                <img src="{{ $photo->getPhotoUrl() }}" alt="Photo" 
+                                     style="width: 100%; height: 180px; object-fit: cover; transition: transform 0.3s ease;"
+                                     onmouseover="this.style.transform='scale(1.05)'"
+                                     onmouseout="this.style.transform='scale(1)'"
+                                     onerror="this.src='{{ asset('images/static/default-' . ($profile->gender === 'female' ? 'female' : 'male') . '.jpg') }}'; this.onerror=null;">
+                                @if($photo->is_primary)
+                                    <span class="badge badge-primary" style="position: absolute; top: 8px; left: 8px; font-size: 0.7rem; z-index: 10;">
+                                        <i class="fas fa-star"></i> Primary
+                                    </span>
+                                @endif
+                                @if(!$photo->is_approved && auth()->id() === $profile->id)
+                                    <span class="badge badge-secondary" style="position: absolute; top: 8px; right: 8px; font-size: 0.7rem; z-index: 10;">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                
                 <!-- Quick Stats -->
                 <div class="card p-4">
                     <h5 class="mb-3">Quick Info</h5>
@@ -201,5 +230,64 @@
         </div>
     </div>
 </div>
+
+<!-- Image Modal -->
+<div id="imageModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.95); cursor: pointer; animation: fadeIn 0.3s;">
+    <span style="position: absolute; top: 20px; right: 35px; color: #f1f1f1; font-size: 50px; font-weight: bold; cursor: pointer; z-index: 10000; line-height: 1; transition: color 0.2s;" 
+          onmouseover="this.style.color='#ff4444'" 
+          onmouseout="this.style.color='#f1f1f1'"
+          onclick="closeImageModal()">&times;</span>
+    <img id="modalImage" style="margin: auto; display: block; width: 90%; max-width: 1000px; margin-top: 3%; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+    <div style="text-align: center; color: white; padding: 20px 0;">
+        <p id="modalCaption" style="margin: 0; font-size: 1.2rem; font-weight: 500;"></p>
+    </div>
+</div>
+
+@push('styles')
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    #imageModal {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    #modalImage {
+        animation: zoomIn 0.3s ease-in;
+    }
+    
+    @keyframes zoomIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    function openImageModal(imageSrc, userName) {
+        var modal = document.getElementById('imageModal');
+        var modalImg = document.getElementById('modalImage');
+        var captionText = document.getElementById('modalCaption');
+        
+        modal.style.display = 'block';
+        modalImg.src = imageSrc;
+        captionText.textContent = userName + ' - Photo';
+    }
+
+    function closeImageModal() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+</script>
+@endpush
 @endsection
 

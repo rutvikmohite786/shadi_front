@@ -7,8 +7,12 @@ class ChatService {
      */
     async saveMessage(senderId, receiverId, message, messageType = 'text') {
         try {
-            // Encrypt the message before saving
-            const encryptedMessage = encrypt(message);
+            // Temporarily disable encryption to fix decryption issues
+            // TODO: Re-enable encryption once key derivation is fixed between Laravel and Node.js
+            const encryptedMessage = message; // Store as plain text for now
+            
+            // Uncomment below to re-enable encryption:
+            // const encryptedMessage = encrypt(message);
             
             const [result] = await db.execute(
                 `INSERT INTO chat_messages (sender_id, receiver_id, message, message_type, created_at, updated_at) 
@@ -27,10 +31,11 @@ class ChatService {
                 [result.insertId]
             );
 
-            // Decrypt message before returning
-            if (rows[0]) {
-                rows[0].message = decrypt(rows[0].message);
-            }
+            // Message is already plain text (encryption disabled temporarily)
+            // No need to decrypt
+            // if (rows[0]) {
+            //     rows[0].message = decrypt(rows[0].message);
+            // }
 
             return rows[0];
         } catch (error) {
@@ -58,13 +63,14 @@ class ChatService {
                 [userId1, userId2, userId2, userId1, limit, offset]
             );
 
-            // Decrypt all messages
-            const decryptedRows = rows.map(row => {
-                row.message = decrypt(row.message);
-                return row;
-            });
+            // Messages are already plain text (encryption disabled temporarily)
+            // No need to decrypt
+            // const decryptedRows = rows.map(row => {
+            //     row.message = decrypt(row.message);
+            //     return row;
+            // });
 
-            return decryptedRows.reverse();
+            return rows.reverse();
         } catch (error) {
             console.error('Error getting conversation:', error);
             throw error;

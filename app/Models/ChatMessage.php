@@ -85,15 +85,51 @@ class ChatMessage extends Model
     public function getMessageAttribute($value): string
     {
         if (empty($value)) {
+            return '';
+        }
+
+        // Check if value is in encrypted format (hex:hex pattern like "16f2f8fa9e3d669cd4429d461b600f6c:63656b1603ad20e18f1eb79c41906518")
+        $isEncryptedFormat = preg_match('/^[a-f0-9]{32}:[a-f0-9]+$/i', $value);
+        
+        // If it doesn't look encrypted, return as-is (might be plain text for backward compatibility)
+        if (!$isEncryptedFormat) {
             return $value;
         }
 
+        // Try to decrypt encrypted message
         try {
             $encryptionService = app(EncryptionService::class);
-            return $encryptionService->decrypt($value);
+            $decrypted = $encryptionService->decrypt($value);
+            
+            // Check if decryption actually worked
+            // If the result is the same as input or still looks encrypted, decryption failed
+            if ($decrypted === $value || preg_match('/^[a-f0-9]{32}:[a-f0-9]+$/i', $decrypted)) {
+                // Decryption failed - this message was encrypted with a different key
+                // Try to show a helpful message instead of the encrypted string
+                \Log::warning('Message decryption failed - key mismatch', [
+                    'message_id' => $this->id ?? 'unknown',
+                    'sender_id' => $this->sender_id ?? 'unknown',
+                    'receiver_id' => $this->receiver_id ?? 'unknown',
+                    'created_at' => $this->created_at ?? 'unknown'
+                ]);
+                
+                // Show a simple indicator that this is an old message
+                return '[Old message - encryption key mismatch]';
+            }
+            
+            // Decryption successful
+            return $decrypted;
         } catch (\Exception $e) {
-            \Log::error('Error decrypting message: ' . $e->getMessage());
-            // Return original value if decryption fails (for backward compatibility)
+            \Log::error('Exception decrypting message: ' . $e->getMessage(), [
+                'message_id' => $this->id ?? 'unknown',
+                'sender_id' => $this->sender_id ?? 'unknown',
+                'receiver_id' => $this->receiver_id ?? 'unknown',
+                'value_preview' => substr($value, 0, 50),
+                'exception' => get_class($e)
+            ]);
+            
+            // If decryption throws exception, return the encrypted value
+            // This allows the system to continue functioning
             return $value;
         }
     }

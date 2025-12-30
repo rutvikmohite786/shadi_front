@@ -95,6 +95,18 @@ class InterestRepository
             ->orWhere(fn($q) => $q->where('sender_id', $userId2)->where('receiver_id', $userId1))
             ->accepted()->exists();
     }
+
+    /**
+     * Get all user IDs that have interests (sent or received) with the given user
+     * This includes users who sent interest to this user, and users who received interest from this user
+     */
+    public function getUserIdsWithInterests(int $userId): array
+    {
+        $sentInterests = $this->model->where('sender_id', $userId)->pluck('receiver_id')->toArray();
+        $receivedInterests = $this->model->where('receiver_id', $userId)->pluck('sender_id')->toArray();
+        
+        return array_unique(array_merge($sentInterests, $receivedInterests));
+    }
 }
 
 
