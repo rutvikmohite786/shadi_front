@@ -74,3 +74,79 @@
         </div>
     </div>
 </nav>
+
+@push('styles')
+<style>
+/* Mobile-friendly navbar */
+.navbar { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid var(--gray-200); }
+.navbar .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; }
+.navbar-nav { display: flex; align-items: center; gap: 12px; }
+.navbar-toggle { display: none; background: none; border: none; }
+
+@media (max-width: 768px) {
+    .navbar .container { flex-wrap: wrap; }
+    .navbar-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 8px; }
+    .navbar-nav {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 10px;
+        display: none !important;
+        padding: 10px 0 4px;
+    }
+    .navbar-nav.open { display: flex !important; }
+    .navbar-nav li { width: 100%; }
+    .navbar-nav .nav-link,
+    .navbar-nav .btn {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 12px 14px;
+        border-radius: 10px;
+    }
+    .navbar-nav .btn {
+        justify-content: center;
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.querySelector('.navbar-toggle');
+    const nav = document.querySelector('.navbar-nav');
+    if (!toggle || !nav) return;
+    const closeNav = () => {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+    const openNav = () => {
+        nav.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+    };
+    toggle.addEventListener('click', () => {
+        const isOpen = nav.classList.contains('open');
+        if (isOpen) {
+            closeNav();
+        } else {
+            openNav();
+        }
+    });
+    nav.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('click', closeNav);
+    });
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            nav.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+    // Ensure closed on load
+    closeNav();
+});
+</script>
+@endpush
