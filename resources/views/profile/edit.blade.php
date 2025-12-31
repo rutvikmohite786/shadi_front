@@ -730,7 +730,7 @@
                         @foreach($photos as $photo)
                             <div class="card" style="position: relative;">
                                 <img src="{{ $photo->getPhotoUrl() }}" alt="Photo" 
-                                     style="width: 100%; height: 260px; object-fit: cover;"
+                                     style="display: block; width: 90%; height: 340px; object-fit: cover; margin: 0 auto;"
                                      onerror="this.src='{{ asset('images/static/default-' . (auth()->user()->gender === 'female' ? 'female' : 'male') . '.jpg') }}'; this.onerror=null;">
                                 @if($photo->is_primary)
                                     <span class="badge badge-primary" style="position: absolute; top: 10px; left: 10px;">Primary</span>

@@ -12,6 +12,8 @@ use App\Http\Controllers\ProfileViewController;
 use App\Http\Controllers\InterestController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminPhotoController;
@@ -40,6 +42,16 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AuthController::class, 'login']);
+    Route::get('verify-email', [VerificationController::class, 'showVerifyForm'])->name('verification.notice');
+    Route::post('verify-email', [VerificationController::class, 'verify'])->name('verification.verify');
+    Route::post('verify-email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
+    Route::post('verify-email/send', [VerificationController::class, 'requestOtp'])->name('verification.send');
+
+    // Password reset
+    Route::get('password/forgot', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('password/forgot', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('password/reset/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+    Route::post('password/reset', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');

@@ -62,15 +62,26 @@
 
                 <div class="form-group">
                     <label for="email" class="form-label">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
-                        class="form-control @error('email') is-invalid @enderror" 
-                        value="{{ old('email') }}" 
-                        placeholder="Enter your email"
-                        required
-                    >
+                    <div class="flex gap-2 items-center">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-control @error('email') is-invalid @enderror" 
+                            value="{{ old('email') }}" 
+                            placeholder="Enter your email"
+                            required
+                            aria-label="Email address"
+                        >
+                        <button 
+                            type="button" 
+                            class="btn btn-outline"
+                            id="open-email-verification"
+                            aria-label="Open email verification"
+                        >
+                            Verify Email
+                        </button>
+                    </div>
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -84,8 +95,11 @@
                         name="phone" 
                         class="form-control @error('phone') is-invalid @enderror" 
                         value="{{ old('phone') }}" 
-                        placeholder="Enter your phone number"
+                        placeholder="10-digit Indian mobile (starts with 6/7/8/9)"
+                        pattern="^[6-9][0-9]{9}$"
+                        maxlength="10"
                         required
+                        aria-label="10 digit Indian mobile number starting with 6,7,8 or 9"
                     >
                     @error('phone')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -179,6 +193,33 @@
                 </button>
             </form>
 
+            <div id="email-verification-modal" class="modal" style="display: none;">
+                <div class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4);"></div>
+                <div class="modal-content" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 24px; border-radius: 12px; width: min(480px, 90%); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 style="margin: 0;">Verify Email</h3>
+                        <button type="button" id="close-email-verification" aria-label="Close verification modal" style="background: none; border: none; font-size: 18px; cursor: pointer;">×</button>
+                    </div>
+                    <div id="email-verify-status" class="mb-3" style="display:none;"></div>
+                    <div class="form-group">
+                        <label for="otp" class="form-label">Enter OTP</label>
+                        <input 
+                            type="text" 
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="6"
+                            id="otp" 
+                            name="otp" 
+                            class="form-control"
+                            placeholder="6-digit code"
+                            aria-label="Enter verification code"
+                        >
+                        <small class="form-text">We sent a 6-digit code to your email.</small>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-block" id="verify-otp-btn">Verify</button>
+                </div>
+            </div>
+
             <div class="auth-divider">
                 <span>or continue with</span>
             </div>
@@ -200,6 +241,97 @@
     </div>
 
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        (function() {
+            const modal = document.getElementById('email-verification-modal');
+            const openBtn = document.getElementById('open-email-verification');
+            const closeBtn = document.getElementById('close-email-verification');
+            const emailInput = document.getElementById('email');
+            const overlay = modal ? modal.querySelector('.modal-overlay') : null;
+            const statusBox = document.getElementById('email-verify-status');
+            const verifyBtn = document.getElementById('verify-otp-btn');
+            const otpInput = document.getElementById('otp');
+            let currentEmail = '';
+
+            const openModal = () => {
+                currentEmail = emailInput?.value || '';
+                if (!currentEmail) {
+                    alert('Please enter your email first.');
+                    return;
+                }
+                sendOtp(currentEmail);
+                if (modal) modal.style.display = 'block';
+            };
+
+            const closeModal = () => {
+                if (modal) modal.style.display = 'none';
+            };
+
+            const setStatus = (message, type = 'success') => {
+                if (!statusBox) return;
+                statusBox.style.display = 'block';
+                statusBox.className = `alert alert-${type} mb-3`;
+                statusBox.textContent = message;
+            };
+
+            const sendOtp = async (email) => {
+                try {
+                    const res = await fetch('{{ route('verification.send') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ email }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Failed to send code');
+                    }
+                    setStatus(data.message || 'Code sent to your email.', 'success');
+                } catch (err) {
+                    setStatus(err.message || 'Could not send code.', 'danger');
+                }
+            };
+
+            const verifyOtp = async () => {
+                const otp = otpInput?.value || '';
+                if (!currentEmail) {
+                    setStatus('Enter email and send code first.', 'danger');
+                    return;
+                }
+                if (!otp) {
+                    setStatus('Please enter the OTP.', 'danger');
+                    return;
+                }
+                try {
+                    const res = await fetch('{{ route('verification.verify') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ email: currentEmail, otp }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Invalid code.');
+                    }
+                    setStatus(data.message || 'Email verified. You can now sign up.', 'success');
+                    closeModal();
+                } catch (err) {
+                    setStatus(err.message || 'Verification failed.', 'danger');
+                }
+            };
+
+            if (openBtn) openBtn.addEventListener('click', openModal);
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (overlay) overlay.addEventListener('click', closeModal);
+            if (verifyBtn) verifyBtn.addEventListener('click', verifyOtp);
+        })();
+    </script>
 </body>
 </html>
 

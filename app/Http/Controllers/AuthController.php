@@ -19,9 +19,13 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): RedirectResponse
     {
-        $user = $this->authService->register($request->validated());
-        auth()->login($user);
-        return redirect()->route('profile.edit')->with('success', 'Registration successful! Please complete your profile.');
+        try {
+            $user = $this->authService->register($request->validated());
+            auth()->login($user);
+            return redirect()->route('profile.edit')->with('success', 'Registration successful! Please complete your profile.');
+        } catch (\Exception $e) {
+            return back()->withInput($request->except('password', 'password_confirmation'))->withErrors(['email' => $e->getMessage()]);
+        }
     }
 
     public function showLoginForm(): View
@@ -48,6 +52,7 @@ class AuthController extends Controller
         return redirect()->route('home')->with('success', 'You have been logged out.');
     }
 }
+
 
 
 

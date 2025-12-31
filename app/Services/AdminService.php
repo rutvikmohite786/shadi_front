@@ -57,7 +57,10 @@ class AdminService
 
     public function verifyUser(User $user): bool
     {
-        return $user->update(['is_verified' => true]);
+        return $user->update([
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
     }
 
     public function getPendingPhotos(): Collection
@@ -155,6 +158,7 @@ class AdminService
         ]);
     }
 }
+
 
 
 

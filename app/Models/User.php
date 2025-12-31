@@ -26,6 +26,7 @@ class User extends Authenticatable
         'is_verified',
         'profile_completed',
         'last_login_at',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -43,6 +44,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'is_verified' => 'boolean',
             'profile_completed' => 'boolean',
+            'email_verified_at' => 'datetime',
         ];
     }
 

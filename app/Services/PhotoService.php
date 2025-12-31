@@ -45,13 +45,34 @@ class PhotoService
         $extension = $file->getClientOriginalExtension();
         $filename = Str::uuid() . '.' . $extension;
 
+        // Remove existing profile photos (file + record)
         if ($user->profile_photo) {
             $oldPath = public_path("images/profile/{$user->profile_photo}");
             if (file_exists($oldPath)) unlink($oldPath);
         }
+        $existingProfilePhotos = $this->photoRepository->findProfileByUser($user->id);
+        foreach ($existingProfilePhotos as $photo) {
+            $oldPath = public_path("images/profile/{$photo->photo_path}");
+            if (file_exists($oldPath)) unlink($oldPath);
+            $this->photoRepository->delete($photo);
+        }
 
         $file->move(public_path('images/profile'), $filename);
-        return $this->userRepository->update($user, ['profile_photo' => $filename]);
+        $this->userRepository->update($user, ['profile_photo' => $filename]);
+
+        // Also store in user_photos so it shows under "Your Photos"
+        $photo = $this->photoRepository->create([
+            'user_id' => $user->id,
+            'photo_path' => $filename,
+            'photo_type' => 'profile',
+            'is_approved' => true,
+            'is_primary' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->photoRepository->setPrimary($photo);
+
+        return true;
     }
 
     public function deletePhoto(User $user, int $photoId): bool
@@ -82,9 +103,35 @@ class PhotoService
 
     public function getUserPhotos(int $userId, bool $approvedOnly = true)
     {
-        return $approvedOnly 
+        $photos = $approvedOnly 
             ? $this->photoRepository->findApprovedByUser($userId)
             : $this->photoRepository->findByUser($userId);
+
+        // Fallback: if a profile photo exists on the user record but no profile-type entry is present,
+        // persist it into user_photos so "Your Photos" shows the uploaded profile photo even if it predates the photo records.
+        if ($approvedOnly === false) {
+            $user = $this->userRepository->find($userId);
+            if ($user && $user->profile_photo) {
+                $hasProfilePhoto = $photos->contains(function ($photo) {
+                    return $photo->photo_type === 'profile';
+                });
+                if (!$hasProfilePhoto) {
+                    $count = $photos->count();
+                    $record = $this->photoRepository->create([
+                        'user_id' => $userId,
+                        'photo_path' => $user->profile_photo,
+                        'photo_type' => 'profile',
+                        'is_approved' => true,
+                        'is_primary' => true,
+                        'sort_order' => $count + 1,
+                    ]);
+                    $this->photoRepository->setPrimary($record);
+                    $photos->prepend($record);
+                }
+            }
+        }
+
+        return $photos;
     }
 
     public function getPendingPhotos()
@@ -111,6 +158,7 @@ class PhotoService
         return $this->photoRepository->reject($photo);
     }
 }
+
 
 
 

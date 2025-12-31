@@ -26,6 +26,13 @@ class UserPhotoRepository
             ->orderBy('is_primary', 'desc')->orderBy('sort_order')->get();
     }
 
+    public function findProfileByUser(int $userId): Collection
+    {
+        return $this->model->where('user_id', $userId)
+            ->where('photo_type', 'profile')
+            ->get();
+    }
+
     public function create(array $data): UserPhoto
     {
         return $this->model->create($data);
@@ -69,6 +76,7 @@ class UserPhotoRepository
         return $photo->delete();
     }
 }
+
 
 
 
